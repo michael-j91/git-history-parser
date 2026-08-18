@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "githist"
+version = "0.1.0"
+description = "Parse git log output into structured commit and file-change records"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "michael-j91" }]
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
