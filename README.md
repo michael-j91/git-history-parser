@@ -65,9 +65,11 @@ counts. `FileChange.is_rename` is true when `old_path` is set.
 
 ## Known limitations
 
-- Merge commits carry no file list from a plain `git log --numstat` run;
-  `commit.files` will be empty for them. Diffing merge commits properly
-  needs `-m` or `--first-parent`, which isn't wired up yet.
+- `run_git_log` passes `--diff-merges=first-parent`, so merge commits get
+  a normal file list (diffed against their first parent) instead of the
+  empty one plain `git log --numstat` gives them. If you feed `parse_log`
+  text from somewhere that didn't use that flag, `commit.files` will
+  simply be empty for merges, same as before.
 - Paths containing a literal tab character aren't unescaped from git's
   C-style quoting. Rare in practice, but not handled.
 

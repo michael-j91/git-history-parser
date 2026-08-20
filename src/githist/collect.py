@@ -4,9 +4,19 @@ from typing import Iterable, Optional, Union
 
 from .parser import PRETTY_FORMAT
 
-# --numstat is what makes per-file add/delete counts show up in the output;
-# without -m, merge commits carry no numstat lines at all (see parser.py).
-LOG_ARGS = ["log", "--numstat", "--no-color", f"--pretty=format:{PRETTY_FORMAT}"]
+# --numstat is what makes per-file add/delete counts show up in the output.
+# Plain `git log --numstat` gives merge commits no file list at all.
+# --diff-merges=first-parent fixes that by diffing each merge against its
+# first parent only, same as a normal commit, without changing which
+# commits get traversed (unlike the --first-parent history-simplification
+# flag, which would silently drop commits reachable only through a merge).
+LOG_ARGS = [
+    "log",
+    "--numstat",
+    "--no-color",
+    "--diff-merges=first-parent",
+    f"--pretty=format:{PRETTY_FORMAT}",
+]
 
 
 def run_git_log(

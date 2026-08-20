@@ -18,10 +18,15 @@ _HEADER_FIELD_COUNT = 6
 def parse_log(text: str) -> List[Commit]:
     """Parse output produced by `git log` run with PRETTY_FORMAT and --numstat.
 
+    Merge commits are parsed the same way as regular commits: a header
+    followed by zero or more numstat lines. Whether a merge actually has
+    file lines depends on how the log text was produced -- run_git_log()
+    passes --diff-merges=first-parent so merges carry a normal diff, but
+    text from a plain `git log --numstat` will still parse fine with
+    Commit.files simply empty for merges.
+
     Known limitations (fine for a v1, worth knowing before trusting this on
     real history):
-      - merge commits normally carry no numstat lines from plain `git log`,
-        so Commit.files is empty for them unless the log was run with -m.
       - a path containing a literal tab is not handled; git quotes such
         paths in C-style escapes that this parser does not unescape.
     """

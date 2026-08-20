@@ -36,12 +36,21 @@ CASES = [
         [("root1", 0, [("main.py", 3, 0, None)])],
     ),
     (
-        "merge commit carries no numstat lines",
+        "merge commit carries no numstat lines when log ran without a diff-merges flag",
         record(
             "merge1", "parentA parentB", "Grace Hopper", "grace@example.com",
             "2024-01-02T00:00:00+00:00", "Merge branch 'feature'",
         ),
         [("merge1", 2, [])],
+    ),
+    (
+        "merge commit with --diff-merges=first-parent carries a normal file list",
+        record(
+            "merge2", "parentA parentB", "Grace Hopper", "grace@example.com",
+            "2024-01-02T00:00:00+00:00", "Merge branch 'feature'",
+            "4\t1\tsrc/app.py\n",
+        ),
+        [("merge2", 2, [("src/app.py", 4, 1, None)])],
     ),
     (
         "binary file shows dashes instead of counts",
