@@ -14,6 +14,23 @@ PRETTY_FORMAT = (
 
 _HEADER_FIELD_COUNT = 6
 
+# git quotes a path in C style (wrapping it in double quotes and escaping
+# special bytes) whenever it contains a tab, newline, backslash, double
+# quote, or -- with the default core.quotepath -- any non-ASCII byte. The
+# named escapes below cover the control characters git ever emits this way;
+# everything else that needs escaping comes out as a \NNN octal byte.
+_C_STYLE_ESCAPES = {
+    "\\": b"\\",
+    '"': b'"',
+    "a": b"\a",
+    "b": b"\b",
+    "f": b"\f",
+    "n": b"\n",
+    "r": b"\r",
+    "t": b"\t",
+    "v": b"\v",
+}
+
 
 def parse_log(text: str) -> List[Commit]:
     """Parse output produced by `git log` run with PRETTY_FORMAT and --numstat.
@@ -24,11 +41,6 @@ def parse_log(text: str) -> List[Commit]:
     passes --diff-merges=first-parent so merges carry a normal diff, but
     text from a plain `git log --numstat` will still parse fine with
     Commit.files simply empty for merges.
-
-    Known limitations (fine for a v1, worth knowing before trusting this on
-    real history):
-      - a path containing a literal tab is not handled; git quotes such
-        paths in C-style escapes that this parser does not unescape.
     """
     commits = []
     for block in text.split(RECORD_SEP):
@@ -69,8 +81,42 @@ def _parse_numstat_line(line: str) -> FileChange:
     added_str, deleted_str, path_field = line.split("\t", 2)
     added = None if added_str == "-" else int(added_str)
     deleted = None if deleted_str == "-" else int(deleted_str)
-    old_path, path = _split_rename(path_field)
+    old_path, path = _split_rename(_unquote_c_style(path_field))
     return FileChange(path=path, added=added, deleted=deleted, old_path=old_path)
+
+
+def _unquote_c_style(field: str) -> str:
+    """Undo git's C-style quoting of a numstat path field.
+
+    git wraps the whole field in double quotes (and only then) when some
+    part of it needs escaping, so an unquoted field is passed through
+    untouched. Non-ASCII bytes come out as \\NNN octal escapes one byte at
+    a time, so escapes are collected into a byte buffer alongside the
+    literal bytes around them and decoded as UTF-8 only at the end.
+    """
+    if len(field) < 2 or field[0] != '"' or field[-1] != '"':
+        return field
+
+    inner = field[1:-1]
+    raw = bytearray()
+    i = 0
+    length = len(inner)
+    while i < length:
+        char = inner[i]
+        if char == "\\" and i + 1 < length:
+            escape = inner[i + 1]
+            if escape in _C_STYLE_ESCAPES:
+                raw.extend(_C_STYLE_ESCAPES[escape])
+                i += 2
+                continue
+            if escape.isdigit():
+                octal_digits = inner[i + 1 : i + 4]
+                raw.append(int(octal_digits, 8))
+                i += 4
+                continue
+        raw.extend(char.encode("utf-8"))
+        i += 1
+    return raw.decode("utf-8")
 
 
 def _split_rename(field: str) -> Tuple[Optional[str], str]:

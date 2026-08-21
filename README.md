@@ -70,8 +70,6 @@ counts. `FileChange.is_rename` is true when `old_path` is set.
   empty one plain `git log --numstat` gives them. If you feed `parse_log`
   text from somewhere that didn't use that flag, `commit.files` will
   simply be empty for merges, same as before.
-- Paths containing a literal tab character aren't unescaped from git's
-  C-style quoting. Rare in practice, but not handled.
 
 ## Running the tests
 

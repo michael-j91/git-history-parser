@@ -108,6 +108,33 @@ CASES = [
         [("sub1", 1, [("docs/naming.md", 1, 0, None)])],
     ),
     (
+        "quoted path with embedded tab is unescaped",
+        record(
+            "quo1", "sub1", "Ada Lovelace", "ada@example.com",
+            "2024-01-08T00:00:00+00:00", "add file with tab in name",
+            '2\t0\t"weird\\tname.py"\n',
+        ),
+        [("quo1", 1, [("weird\tname.py", 2, 0, None)])],
+    ),
+    (
+        "quoted path with octal-escaped unicode bytes",
+        record(
+            "quo2", "quo1", "Ada Lovelace", "ada@example.com",
+            "2024-01-09T00:00:00+00:00", "add unicode filename",
+            '1\t0\t"caf\\303\\251.py"\n',
+        ),
+        [("quo2", 1, [("café.py", 1, 0, None)])],
+    ),
+    (
+        "quoted whole-field rename with embedded tab in old name",
+        record(
+            "quo3", "quo2", "Ada Lovelace", "ada@example.com",
+            "2024-01-10T00:00:00+00:00", "rename file with tab in old name",
+            '0\t0\t"old\\tname.py => new.py"\n',
+        ),
+        [("quo3", 1, [("new.py", 0, 0, "old\tname.py")])],
+    ),
+    (
         "empty log text yields no commits",
         "",
         [],
