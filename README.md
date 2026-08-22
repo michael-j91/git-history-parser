@@ -63,6 +63,26 @@ Commit(
 `FileChange.is_binary` is true when git reported `-`/`-` instead of line
 counts. `FileChange.is_rename` is true when `old_path` is set.
 
+## Churn aggregation
+
+`churn_by_file` and `churn_by_author` roll a list of `Commit`s up into
+per-path and per-author totals -- commit counts, lines added/deleted, and
+who touched what:
+
+```python
+from githist import churn_by_file
+
+files = churn_by_file(commits)
+hotspots = sorted(files.values(), key=lambda f: f.total_lines, reverse=True)
+for f in hotspots[:10]:
+    print(f.path, f.total_lines, f.commits, len(f.authors))
+```
+
+Both skip merge commits by default (pass `include_merges=True` to include
+them) and track renamed files under whatever path they had at the time of
+each commit, so a file's churn is split across `old_path` and `path` if
+it was ever renamed.
+
 ## Known limitations
 
 - `run_git_log` passes `--diff-merges=first-parent`, so merge commits get
