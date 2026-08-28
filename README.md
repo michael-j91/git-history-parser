@@ -83,6 +83,29 @@ them) and track renamed files under whatever path they had at the time of
 each commit, so a file's churn is split across `old_path` and `path` if
 it was ever renamed.
 
+## Co-change analysis
+
+`cochange_pairs` counts how often pairs of files were touched by the same
+commit, which is a decent proxy for coupling that isn't visible from
+imports or directory structure alone -- two files in unrelated packages
+that always change together are telling you something an import graph
+won't:
+
+```python
+from githist import cochange_pairs, cochange_partners
+
+pairs = cochange_pairs(commits, min_commits=3)
+for pair in cochange_partners(pairs, "src/githist/parser.py"):
+    print(pair.file_a, pair.file_b, pair.commits)
+```
+
+Commits touching more than `max_files_per_commit` files (100 by default)
+are skipped, since a single vendoring drop or mass reformat would
+otherwise flood the result with pairs that reflect nothing about how the
+code is actually coupled. Pairs with fewer than `min_commits` shared
+commits (2 by default) are dropped too, since two files sharing a single
+commit is usually coincidence.
+
 ## Known limitations
 
 - `run_git_log` passes `--diff-merges=first-parent`, so merge commits get
